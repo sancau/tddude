@@ -1,9 +1,11 @@
 # coding=utf-8
-from datetime import datetime, timedelta
-import time
-import os
 
-import fire
+"""
+Monitors given path, runs tester after modifications, writes log file, notifies GUI
+"""
+
+from datetime import datetime
+import time
 
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -11,22 +13,13 @@ from watchdog.events import FileSystemEventHandler
 from tester import test
 
 
-def get_last_modified_offset(filename):
-    try:
-        mtime = os.path.getmtime(filename)
-    except OSError:
-        mtime = 0
-    mod = datetime.fromtimestamp(mtime)
-    delta = datetime.now() - mod
-    return delta.seconds, delta.microseconds
-
-
 class EventHandler(FileSystemEventHandler):
-    def __init__(self, root_dir, log=None):
+    def __init__(self, root_dir, log=None, gui=None):
         super(EventHandler, self).__init__()
         self.root_dir = root_dir
         self.log = log
         self.history = {}
+        self.gui = gui
 
     def on_modified(self, event):
         
@@ -38,7 +31,7 @@ class EventHandler(FileSystemEventHandler):
 
         if event.src_path in self.history:
             delta = datetime.now() - self.history[event.src_path]
-            if delta.seconds < 1 and delta.microseconds < 500000:
+            if delta.seconds < 1:
                 return 
         
         self.history[event.src_path] = datetime.now()
@@ -55,15 +48,18 @@ class EventHandler(FileSystemEventHandler):
             print('No test were found or code has syntax errors')
         
 
-def notify(result):
-    print('[GREEN]' if not result.failed else '[RED]', 
-          '({}/{})'.format(result.passed, result.passed + result.failed),
-          'Execution time: {} seconds'.format(result.time.seconds))
+    def notify(self, result):
+        print('[GREEN]' if not result.failed else '[RED]', 
+              '({}/{})'.format(result.passed, result.passed + result.failed),
+              'Execution time: {} seconds'.format(result.time.seconds))
+
+        if self.gui:
+            self.gui.process_tests_result(result)
 
 
-def monitor(source_root, log):
+def monitor(source_root, log, gui):
     observer = Observer()
-    event_handler = EventHandler(source_root, log)
+    event_handler = EventHandler(source_root, log, gui)
     observer.schedule(event_handler, source_root, recursive=True)
     observer.start()
     try:
@@ -72,13 +68,3 @@ def monitor(source_root, log):
     except KeyboardInterrupt:
         observer.stop()
         print('Stopped monitoring')
-
-
-def main(source_root, log=None):
-    print('[TDDUDE] Monitoring path {}'.format(source_root))
-    print()
-    monitor(source_root, log)
-
-
-if __name__ == '__main__':
-    fire.Fire(main)

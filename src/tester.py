@@ -1,4 +1,5 @@
 # coding=utf-8
+
 """
 Runs the test suite and parse it's stdout output
 Returns data for passed / failed count, execution time and the log
@@ -12,6 +13,7 @@ TODO:
 
 
 """
+
 from collections import namedtuple
 
 import subprocess
