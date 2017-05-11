@@ -95,7 +95,7 @@ def parse_pytest_output(s):
     return PytestOutput(failed, passed, Time(hours, minutes, seconds), s)
 
 
-def test(work_dir='.'):
-    result = subprocess.run('pytest {}'.format(work_dir), stdout=subprocess.PIPE, shell=True)
+def test(path='.'):
+    result = subprocess.run('py.test {}'.format(path), stdout=subprocess.PIPE, shell=True)
     str_result = result.stdout.decode('utf-8')
     return parse_pytest_output(str_result)
