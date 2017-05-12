@@ -14,7 +14,7 @@ from tkinter import *
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
-from tester import test 
+from tddude.tester import test 
 
 
 class EventHandler(FileSystemEventHandler):
